@@ -22,7 +22,10 @@
 __version__ = '1.0.0'
 __author__  = 'xlr8or'
 
-import b3, re, threading, time, os
+import b3
+import threading
+import time
+import os
 import b3.events
 import os.path
 
@@ -41,6 +44,7 @@ class ConfigmanagerPlugin(b3.plugin.Plugin):
   _confpath = ''
   _modpath = ''
   _exec_delay = 15 # seconds after roundstart to execute the config
+  _disablechecking = False
 
 
   def onStartup(self):
@@ -58,6 +62,11 @@ class ConfigmanagerPlugin(b3.plugin.Plugin):
     # load our settings
     self.verbose('Loading config')
     
+    try:
+        self._disablechecking = self.config.getbool('settings', 'disablechecking')
+    except:
+        pass
+
     self._confpath = self.console.getCvar('fs_homepath')
     if self._confpath != None:
       self._confpath = self._confpath.getString()
@@ -68,7 +77,7 @@ class ConfigmanagerPlugin(b3.plugin.Plugin):
     else:
       self._modpath = 'main'
 
-    # Not really needed but to make sure we dont get stuck in the CoD root dir.
+    # Not really needed but to make sure we don't get stuck in the CoD root dir.
     if self._modpath == '':
       self._modpath = 'main'
 
@@ -99,17 +108,30 @@ class ConfigmanagerPlugin(b3.plugin.Plugin):
     """\
     Check and run the configs
     """
-    if os.path.isfile(self._typeandmappath):       # b3_<gametype>_<mapname>.cfg
-      self.console.write('exec %s' % self._typeandmap)
-      self.debug('Executing %s' %(self._typeandmappath))
-    elif os.path.isfile(self._gametypepath):       # b3_<gametype>.cfg
-      self.console.write('exec %s' % self._gametype)
-      self.debug('Executing %s' %(self._gametypepath))
-    elif os.path.isfile(self._mainconfpath):       # b3_main.cfg
-      self.console.write('exec b3_main.cfg')
-      self.debug('Executing %s' %(self._mainconfpath))
+    if not self._disablechecking:
+        if os.path.isfile(self._typeandmappath):       # b3_<gametype>_<mapname>.cfg
+          self.console.write('exec %s' % self._typeandmap)
+          self.debug('Executing %s' %(self._typeandmappath))
+        elif os.path.isfile(self._gametypepath):       # b3_<gametype>.cfg
+          self.console.write('exec %s' % self._gametype)
+          self.debug('Executing %s' %(self._gametypepath))
+        elif os.path.isfile(self._mainconfpath):       # b3_main.cfg
+          self.console.write('exec b3_main.cfg')
+          self.debug('Executing %s' %(self._mainconfpath))
+        else:
+          self.debug('No matching configs found.')
     else:
-      self.debug('No matching configs found.')
+        # forcing to execute configs even if they do not exist (remote B3 installs)
+        self.console.write('exec b3_main.cfg')
+        self.debug('Forcing %s' %(self._mainconfpath))
+        # this method runs in a separate thread, so time.sleep() will not affect B3 core behavior
+        time.sleep(1)
+        self.console.write('exec %s' % self._gametype)
+        self.debug('Forcing %s' %(self._gametypepath))
+        time.sleep(1)
+        self.console.write('exec %s' % self._typeandmap)
+        self.debug('Forcing %s' %(self._typeandmappath))
+
 
 if __name__ == '__main__':
   print '\nThis is version '+__version__+' by '+__author__+' for BigBrotherBot.\n'

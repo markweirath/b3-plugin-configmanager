@@ -1,4 +1,8 @@
 <configuration plugin="configmanager">
-  <settings name="settings">
-  </settings>
+    <settings name="settings">
+        <!-- Setting 'disablechecking' to 'True' will prevent the plugin from checking the existence of the config file.
+         This might help if you run B3 remotely, but it might trigger unexpected behavior from the game server.
+         Use at your own risk! -->
+        <set name="disablechecking">False</set>
+    </settings>
 </configuration>
