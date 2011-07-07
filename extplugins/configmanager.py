@@ -19,7 +19,7 @@
 # Changelog:
 #
 
-__version__ = '1.0.0'
+__version__ = '1.0.1'
 __author__  = 'xlr8or'
 
 import b3
@@ -43,12 +43,12 @@ class ConfigmanagerPlugin(b3.plugin.Plugin):
   _mainconfpath = ''
   _confpath = ''
   _modpath = ''
-  _exec_delay = 15 # seconds after roundstart to execute the config
+  _exec_delay = 5 # seconds after roundstart to execute the config
   _disablechecking = False
 
 
   def onStartup(self):
-    """\
+    """
     Initialize plugin settings
     """
     # Register our events
@@ -59,13 +59,18 @@ class ConfigmanagerPlugin(b3.plugin.Plugin):
 
 
   def onLoadConfig(self):
-    # load our settings
+    """
+    Load our settings
+    """
     self.verbose('Loading config')
     
     try:
         self._disablechecking = self.config.getbool('settings', 'disablechecking')
+        self.debug('Remote mode: Not checking for existence of config files')
     except:
+        self.debug('Local mode: checking for existence of config files')
         pass
+    self.verbose('Disablechecking: %s' % self._disablechecking)
 
     self._confpath = self.console.getCvar('fs_homepath')
     if self._confpath != None:
@@ -86,7 +91,7 @@ class ConfigmanagerPlugin(b3.plugin.Plugin):
 
 
   def onEvent(self, event):
-    """\
+    """
     Handle intercepted events
     """
     if event.type == b3.events.EVT_GAME_ROUND_START:
@@ -105,10 +110,11 @@ class ConfigmanagerPlugin(b3.plugin.Plugin):
       
 
   def checkConfig(self):
-    """\
+    """
     Check and run the configs
     """
     if not self._disablechecking:
+        self.verbose('Local mode.')
         if os.path.isfile(self._typeandmappath):       # b3_<gametype>_<mapname>.cfg
           self.console.write('exec %s' % self._typeandmap)
           self.debug('Executing %s' %(self._typeandmappath))
@@ -121,6 +127,7 @@ class ConfigmanagerPlugin(b3.plugin.Plugin):
         else:
           self.debug('No matching configs found.')
     else:
+        self.verbose('Remote mode.')
         # forcing to execute configs even if they do not exist (remote B3 installs)
         self.console.write('exec b3_main.cfg')
         self.debug('Forcing %s' %(self._mainconfpath))
